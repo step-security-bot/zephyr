@@ -6,53 +6,66 @@
 
 /dts-v1/;
 #include <atmel/samd5xx19.dtsi>
+#include "wio_terminal-pinctrl.dtsi"
 
 / {
 	model = "Wio Terminal";
 	compatible = "seeed,wio-terminal";
 
 	chosen {
-	zephyr,console = &sercom2;
-	zephyr,shell-uart = &sercom2;
-	zephyr,sram = &sram0;
-	zephyr,flash = &flash0;
-	zephyr,code-partition = &code_partition;
+		zephyr,console = &sercom2;
+		zephyr,shell-uart = &sercom2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+		zephyr,display = &ili9341;
 	};
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
-	led0 = &led0;
-	sw0 = &user_button_0;
-	sw1 = &user_button_1;
-	sw2 = &user_button_2;
+		led0 = &led0;
+		sw0 = &user_button_0;
+		sw1 = &user_button_1;
+		sw2 = &user_button_2;
+		accel0 = &lis3dh;
 	};
 
 	leds {
-	compatible = "gpio-leds";
-	led0: led_0 {
-	gpios = <&porta 15 0>;
-	label = "LED";
-	};
-	gpio_keys {
-	compatible = "gpio-keys";
-	user_button_0: button_0 {
-	label = "User Button 0";
-	gpios = <&portc 26 1>;
-	};
-	user_button_1: button_1 {
-	label = "User Button 1";
-	gpios = <&portc 27 1>;
-	};
-	user_button_2: button_2 {
-	label = "User Button 2";
-	gpios = <&portc 28 1>;
-	};
-	};
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&porta 15 0>;
+			label = "LED";
+		};
+		gpio_keys {
+			compatible = "gpio-keys";
+			user_button_0: button_0 {
+				label = "User Button 0";
+				gpios = <&portc 26 1>;
+			};
+			user_button_1: button_1 {
+				label = "User Button 1";
+				gpios = <&portc 27 1>;
+			};
+			user_button_2: button_2 {
+				label = "User Button 2";
+				gpios = <&portc 28 1>;
+			};
+		};
 	};
 };
 
 &cpu0 {
 	clock-frequency = <120000000>;
+};
+
+&sercom1 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom1_uart_default>;
+	pinctrl-names = "default";
 };
 
 &sercom2 {
@@ -61,9 +74,61 @@
 	current-speed = <115200>;
 	rxpo = <1>;
 	txpo = <0>;
-	pinctrl-0 = <&pb27c_sercom2_pad1 &pb26c_sercom2_pad0>;
+	pinctrl-0 = <&sercom2_uart_default>;
+	pinctrl-names = "default";
 };
 
+&sercom3 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom3_i2c_default>;
+	pinctrl-names = "default";
+};
+
+&sercom4 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom4_i2c_default>;
+	pinctrl-names = "default";
+
+	lis3dh:lis3dh@18a {
+		compatible = "st,lis3dh", "st,lis2dh";
+		reg = <0x18a>;
+	};	
+};
+
+&sercom5 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dipo = <0>;
+	dopo = <1>;
+
+	pinctrl-0 = <&sercom5_spi_default>;
+	pinctrl-names = "default";
+
+	ili9341: ili9341@0 {
+		compatible = "ilitek,ili9341";
+		spi-max-frequency = <25000000>;
+		reg = <0>;
+		cmd-data-gpios = <&portc 6 GPIO_ACTIVE_LOW>;
+		pixel-format = <0>;
+		rotation = <270>;
+		width = <320>;
+		height = <240>;
+	};
+
+
+};
 
 
 &dmac {
@@ -72,21 +137,21 @@
 
 &flash0 {
 	partitions {
-	compatible = "fixed-partitions";
-	#address-cells = <1>;
-	#size-cells = <1>;
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	boot_partition: partition@0 {
-	label = "uf2";
-	reg = <0x00000000 DT_SIZE_K(16)>;
-	read-only;
-	};
+		boot_partition: partition@0 {
+			label = "uf2";
+			reg = <0x00000000 DT_SIZE_K(16)>;
+			read-only;
+		};
 
-	code_partition: partition@4000 {
-	label = "code";
-	reg = <0x4000 DT_SIZE_K(512-16)>;
-	read-only;
-	};
+		code_partition: partition@4000 {
+			label = "code";
+			reg = <0x4000 DT_SIZE_K(512-16)>;
+			read-only;
+		};
 	};
 };
 
