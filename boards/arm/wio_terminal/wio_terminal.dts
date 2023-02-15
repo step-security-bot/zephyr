@@ -13,7 +13,7 @@
 	compatible = "seeed,wio-terminal";
 
 	chosen {
-		zephyr,console = &sercom2;
+		zephyr,console = &cdc_acm_uart0;
 		zephyr,shell-uart = &sercom2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -36,6 +36,12 @@
 			gpios = <&porta 15 0>;
 			label = "LED";
 		};
+
+		lcd_backlight: lcd_backlight {
+			gpios = <&portc 5 GPIO_ACTIVE_HIGH>;
+			label = "LCD Backlight";
+		};
+
 		gpio_keys {
 			compatible = "gpio-keys";
 			user_button_0: button_0 {
@@ -105,22 +111,25 @@
 	};	
 };
 
-&sercom5 {
+&sercom7 {
 	status = "okay";
 	compatible = "atmel,sam0-spi";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	dipo = <0>;
-	dopo = <1>;
+	dipo = <2>; // MISO as DI, ie. PAD2
+	dopo = <2>; // MOSI as DO, i.e. PAD3
 
-	pinctrl-0 = <&sercom5_spi_default>;
+	pinctrl-0 = <&sercom7_spi_default>;
 	pinctrl-names = "default";
+
+	//cs-gpios = <&portb 21 GPIO_ACTIVE_LOW>;
 
 	ili9341: ili9341@0 {
 		compatible = "ilitek,ili9341";
 		spi-max-frequency = <25000000>;
 		reg = <0>;
 		cmd-data-gpios = <&portc 6 GPIO_ACTIVE_LOW>;
+		reset-gpios = < &portc 7 GPIO_ACTIVE_LOW  >;
 		pixel-format = <0>;
 		rotation = <270>;
 		width = <320>;
@@ -156,6 +165,13 @@
 };
 
 zephyr_udc0: &usb0 {
-	compatible = "atmel,sam0-usb";
 	status = "okay";
+
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
+
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+
 };

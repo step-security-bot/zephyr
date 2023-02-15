@@ -34,11 +34,12 @@
 		};
 	};
 	
-	sercom5_spi_default: sercom5_spi_default {
+	sercom7_spi_default: sercom7_spi_default {
 		group1 {
-			pinmux = <PB2D_SERCOM5_PAD0>,
-				 <PB3D_SERCOM5_PAD1>,
-				 <PB1D_SERCOM5_PAD3>;
+			pinmux = <PB18D_SERCOM7_PAD2>,	// MISO
+				 <PB19D_SERCOM7_PAD3>,		// MOSI
+				 <PB20D_SERCOM7_PAD1>,		// SCK	
+				 <PB21D_SERCOM7_PAD0>;		// SS
 		};
 	};
 
