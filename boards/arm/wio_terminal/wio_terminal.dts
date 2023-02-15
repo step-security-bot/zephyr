@@ -105,9 +105,9 @@
 	pinctrl-0 = <&sercom4_i2c_default>;
 	pinctrl-names = "default";
 
-	lis3dh:lis3dh@18a {
+	lis3dh:lis3dh@18 {
 		compatible = "st,lis3dh", "st,lis2dh";
-		reg = <0x18a>;
+		reg = <0x18>;
 	};	
 };
 
