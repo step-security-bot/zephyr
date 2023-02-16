@@ -67,6 +67,26 @@ void main(void)
 {
 	const struct device *const sensor = DEVICE_DT_GET_ANY(st_lis2dh);
 
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+	printk("bla\n");
+
 	if (sensor == NULL) {
 		printf("No device found\n");
 		return;
@@ -75,6 +95,8 @@ void main(void)
 		printf("Device %s is not ready\n", sensor->name);
 		return;
 	}
+
+	printk("bla");
 
 #if CONFIG_LIS2DH_TRIGGER
 	{
@@ -113,6 +135,8 @@ void main(void)
 #else /* CONFIG_LIS2DH_TRIGGER */
 	printf("Polling at 0.5 Hz\n");
 	while (true) {
+		printk("tick\n");
+
 		fetch_and_display(sensor);
 		k_sleep(K_MSEC(2000));
 	}

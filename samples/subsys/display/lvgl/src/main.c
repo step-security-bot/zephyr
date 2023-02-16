@@ -44,6 +44,12 @@ void main(void)
 	lv_obj_t *hello_world_label;
 	lv_obj_t *count_label;
 
+	printk("Hello world!\n");
+	printk("Hello world!\n");
+	printk("Hello world!\n");
+
+	
+
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
 		LOG_ERR("Device not ready, aborting test");
@@ -86,6 +92,8 @@ void main(void)
 		hello_world_label = lv_label_create(lv_scr_act());
 	}
 
+	printk("start creating ui!\n");
+
 	lv_label_set_text(hello_world_label, "Hello world!");
 	lv_obj_align(hello_world_label, LV_ALIGN_CENTER, 0, 0);
 
@@ -96,6 +104,7 @@ void main(void)
 	display_blanking_off(display_dev);
 
 	while (1) {
+		LOG_INF("ui loop!");
 		if ((count % 100) == 0U) {
 			sprintf(count_str, "%d", count/100U);
 			lv_label_set_text(count_label, count_str);

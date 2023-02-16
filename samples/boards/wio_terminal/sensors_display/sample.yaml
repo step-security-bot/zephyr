@@ -1,0 +1,7 @@
+sample:
+  description: Wio Terminal sample application
+  name: sensors_display
+tests:
+  sample.board.wioterminal.sensors_display:
+    platform_allow: wio_terminal
+    tags: samples display gui sensor
