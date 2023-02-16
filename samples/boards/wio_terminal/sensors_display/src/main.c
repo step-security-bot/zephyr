@@ -34,7 +34,6 @@ static void fetch_and_display(lv_timer_t * timer)
 {
 	static unsigned int count;
 	struct sensor_value accel[3];
-	struct sensor_value temperature;
 	const char *overrun = "";
 	int rc = sensor_sample_fetch(sensor);
 
