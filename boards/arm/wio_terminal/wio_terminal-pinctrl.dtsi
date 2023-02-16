@@ -6,6 +6,16 @@
 #include <dt-bindings/pinctrl/samd51p-pinctrl.h>
 
 &pinctrl {
+
+	sercom0_spi_default: sercom0_spi_default {
+		group1 {
+			pinmux = <PC24C_SERCOM0_PAD2>,	// MISO
+				 <PB24C_SERCOM0_PAD0>,		// MOSI
+				 <PB25C_SERCOM0_PAD1>,		// SCK	
+				 <PC25C_SERCOM0_PAD3>;		// SS
+		};
+	};
+
 	sercom1_uart_default: sercom1_uart_default {
 		group1 {
 			pinmux = <PC23C_SERCOM1_PAD1>,
@@ -34,6 +44,25 @@
 		};
 	};
 	
+	sercom5_spi_default: sercom5_spi_default {
+		group1 {
+			pinmux = <PB0D_SERCOM5_PAD2>,	// MISO
+				 <PB2D_SERCOM5_PAD0>,		// MOSI
+				 <PB3D_SERCOM5_PAD1>,		// SCK	
+				 <PB1D_SERCOM5_PAD3>;		// SS
+		};
+	};
+
+	sercom6_spi_default: sercom6_spi_default {
+		group1 {
+			pinmux = <PC18C_SERCOM6_PAD2>,	// MISO
+				 <PC16C_SERCOM6_PAD0>,		// MOSI
+				 <PC17C_SERCOM6_PAD1>,		// SCK	
+				 <PC19C_SERCOM6_PAD3>,		// SS
+				 <PD21_GPIO>;				// SD_DET
+		};
+	};
+
 	sercom7_spi_default: sercom7_spi_default {
 		group1 {
 			pinmux = <PB18D_SERCOM7_PAD2>,	// MISO

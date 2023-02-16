@@ -16,7 +16,7 @@
 		zephyr,console = &cdc_acm_uart0;
 		zephyr,shell-uart = &sercom2;
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
+		zephyr,flash = &flash0; // todo add support w25q32jvwj0 external flash (4MB)
 		zephyr,code-partition = &code_partition;
 		zephyr,display = &ili9341;
 	};
@@ -24,6 +24,7 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		lcdbacklight = &lcd_backlight;
 		sw0 = &user_button_0;
 		sw1 = &user_button_1;
 		sw2 = &user_button_2;
@@ -33,7 +34,8 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&porta 15 0>;
+			gpios = <&porta 15 GPIO_ACTIVE_LOW>;
+			
 			label = "LED";
 		};
 
@@ -41,27 +43,43 @@
 			gpios = <&portc 5 GPIO_ACTIVE_HIGH>;
 			label = "LCD Backlight";
 		};
+	};
 
-		gpio_keys {
-			compatible = "gpio-keys";
-			user_button_0: button_0 {
-				label = "User Button 0";
-				gpios = <&portc 26 1>;
-			};
-			user_button_1: button_1 {
-				label = "User Button 1";
-				gpios = <&portc 27 1>;
-			};
-			user_button_2: button_2 {
-				label = "User Button 2";
-				gpios = <&portc 28 1>;
-			};
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: button_0 {
+			label = "User Button 0";
+			gpios = <&portc 26 1>;
+		};
+		user_button_1: button_1 {
+			label = "User Button 1";
+			gpios = <&portc 27 1>;
+		};
+		user_button_2: button_2 {
+			label = "User Button 2";
+			gpios = <&portc 28 1>;
 		};
 	};
+
 };
 
 &cpu0 {
 	clock-frequency = <120000000>;
+};
+
+// RTL8720D SPI is on SERCOM0
+&sercom0 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dipo = <2>; // MISO (on PAD2) as DI
+	dopo = <0>; // MOSI (on PAD0) as DO
+
+	pinctrl-0 = <&sercom0_spi_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&portc 25 GPIO_ACTIVE_LOW>;
 };
 
 &sercom1 {
@@ -111,22 +129,62 @@
 	};	
 };
 
+&sercom5 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dipo = <2>; // MISO (on PAD2) as DI
+	dopo = <0>; // MOSI (on PAD0) as DO
+
+	pinctrl-0 = <&sercom5_spi_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&portb 1 GPIO_ACTIVE_LOW>;
+};
+
+&sercom6 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dipo = <2>; // MISO (on PAD2) as DI
+	dopo = <0>; // MOSI (on PAD0) as DO
+
+	pinctrl-0 = <&sercom6_spi_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&portc 19 GPIO_ACTIVE_LOW>;
+
+	// sdhc0: sdhc@0 {
+	// 	compatible = "zephyr,sdhc-spi-slot";
+	// 	reg = <0>;
+	// 	status = "okay";
+	// 	sdmmc {
+	// 		compatible = "zephyr,sdmmc-disk";
+	// 		status = "okay";
+	// 	};
+	// 	spi-max-frequency = <24000000>;
+	// };
+
+};
+
 &sercom7 {
 	status = "okay";
 	compatible = "atmel,sam0-spi";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	dipo = <2>; // MISO as DI, ie. PAD2
-	dopo = <2>; // MOSI as DO, i.e. PAD3
+	dipo = <2>; // MISO (on PAD2) as DI
+	dopo = <2>; // MOSI (on PAD3) as DO
 
 	pinctrl-0 = <&sercom7_spi_default>;
 	pinctrl-names = "default";
 
-	//cs-gpios = <&portb 21 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&portb 21 GPIO_ACTIVE_LOW>;
 
 	ili9341: ili9341@0 {
 		compatible = "ilitek,ili9341";
-		spi-max-frequency = <25000000>;
+		spi-max-frequency = <24000000>;
 		reg = <0>;
 		cmd-data-gpios = <&portc 6 GPIO_ACTIVE_LOW>;
 		reset-gpios = < &portc 7 GPIO_ACTIVE_LOW  >;
