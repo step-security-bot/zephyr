@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
+#include "fs_priv.h"
+
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <limits.h>
@@ -18,15 +23,6 @@
 int zvfs_fstat(int fd, struct stat *buf);
 
 BUILD_ASSERT(PATH_MAX >= MAX_FILE_NAME, "PATH_MAX is less than MAX_FILE_NAME");
-
-struct posix_fs_desc {
-	union {
-		struct fs_file_t file;
-		struct fs_dir_t dir;
-	};
-	bool is_dir;
-	bool used;
-};
 
 static struct posix_fs_desc desc_array[CONFIG_POSIX_OPEN_MAX];
 
@@ -59,22 +55,38 @@ static inline void posix_fs_free_obj(struct posix_fs_desc *ptr)
 	ptr->used = false;
 }
 
+static int posix_mode_to_zephyr(int mf)
+{
+	int mode = (mf & O_CREAT) ? FS_O_CREATE : 0;
+
+	mode |= (mf & O_APPEND) ? FS_O_APPEND : 0;
+	mode |= (mf & O_TRUNC) ? FS_O_TRUNC : 0;
+
+	switch (mf & O_ACCMODE) {
+	case O_RDONLY:
+		mode |= FS_O_READ;
+		break;
+	case O_WRONLY:
+		mode |= FS_O_WRITE;
+		break;
+	case O_RDWR:
+		mode |= FS_O_RDWR;
+		break;
+	default:
+		break;
+	}
+
+	return mode;
+}
+
 int zvfs_open(const char *name, int flags, int mode)
 {
 	int rc, fd;
 	struct posix_fs_desc *ptr = NULL;
-	int zflags = 0;
+	int zmode = posix_mode_to_zephyr(flags);
 
-	if ((flags & O_ACCMODE) == O_RDONLY) {
-		zflags |= FS_O_READ;
-	} else if ((flags & O_ACCMODE) == O_WRONLY) {
-		zflags |= FS_O_WRITE;
-	} else if ((flags & O_ACCMODE) == O_RDWR) {
-		zflags |= FS_O_RDWR;
-	}
-
-	if ((flags & O_APPEND) != 0) {
-		zflags |= FS_O_APPEND;
+	if (zmode < 0) {
+		return zmode;
 	}
 
 	fd = zvfs_reserve_fd();
@@ -103,7 +115,7 @@ int zvfs_open(const char *name, int flags, int mode)
 		}
 	}
 
-	rc = fs_open(&ptr->file, name, zflags);
+	rc = fs_open(&ptr->file, name, zmode);
 	if (rc < 0) {
 		goto out_err;
 	}
@@ -433,3 +445,13 @@ int fstat(int fildes, struct stat *buf)
 #ifdef CONFIG_POSIX_FILE_SYSTEM_ALIAS_FSTAT
 FUNC_ALIAS(fstat, _fstat, int);
 #endif
+
+/**
+ * @brief Remove a directory.
+ *
+ * See IEEE 1003.1
+ */
+int rmdir(const char *path)
+{
+	return unlink(path);
+}

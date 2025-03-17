@@ -6,7 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 #define ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 
-#include "posix_types.h"
+/* include posix_types.h before posix_features.h (here) to avoid build errors against newlib */
+#include <zephyr/posix/posix_types.h>
 #include "posix_features.h"
 
 #ifdef __cplusplus
@@ -115,11 +116,15 @@ struct sigaction {
 	void (*sa_sigaction)(int signo, siginfo_t *info, void *context);
 };
 
+typedef void (*sighandler_t)(int signo);
+
 unsigned int alarm(unsigned int seconds);
 int kill(pid_t pid, int sig);
 int pause(void);
 int raise(int signo);
+TOOLCHAIN_IGNORE_WSHADOW_BEGIN;
 int sigaction(int sig, const struct sigaction *ZRESTRICT act, struct sigaction *ZRESTRICT oact);
+TOOLCHAIN_IGNORE_WSHADOW_END;
 int sigpending(sigset_t *set);
 int sigsuspend(const sigset_t *sigmask);
 int sigwait(const sigset_t *ZRESTRICT set, int *ZRESTRICT signo);
@@ -129,7 +134,7 @@ int sigfillset(sigset_t *set);
 int sigaddset(sigset_t *set, int signo);
 int sigdelset(sigset_t *set, int signo);
 int sigismember(const sigset_t *set, int signo);
-void (*signal(int signo, void (*)(int signo)))(int signo);
+sighandler_t signal(int signo, sighandler_t handler);
 int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
 
 int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);

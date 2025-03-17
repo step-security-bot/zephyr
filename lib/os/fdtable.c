@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Linaro Limited
+ * Copyright (c) 2024 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,10 +15,9 @@
  */
 
 #include <errno.h>
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/speculation.h>
@@ -72,12 +72,6 @@ static struct fd_entry fdtable[CONFIG_ZVFS_OPEN_MAX] = {
 	{0},
 #endif
 };
-
-#ifdef CONFIG_POSIX_DEVICE_IO_STDIN_STDOUT_STDERR
-FILE *stdin = &fdtable[0];
-FILE *stdout = &fdtable[1];
-FILE *stderr = &fdtable[2];
-#endif
 
 static K_MUTEX_DEFINE(fdtable_lock);
 
@@ -254,6 +248,7 @@ int zvfs_reserve_fd(void)
 		(void)z_fd_ref(fd);
 		fdtable[fd].obj = NULL;
 		fdtable[fd].vtable = NULL;
+		fdtable[fd].offset = 0;
 		k_mutex_init(&fdtable[fd].lock);
 		k_condvar_init(&fdtable[fd].cond);
 	}
@@ -285,8 +280,14 @@ void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable
 	 * variables to avoid keeping the lock for a long period of time.
 	 */
 	if (vtable && vtable->ioctl) {
+		int prev_errno = errno;
+
 		(void)zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_SET_LOCK,
 					   &fdtable[fd].lock);
+		if ((prev_errno != EOPNOTSUPP) && (errno == EOPNOTSUPP)) {
+			/* restore backed-up errno value if the backend does not support locking */
+			errno = prev_errno;
+		}
 	}
 }
 
@@ -394,7 +395,14 @@ int zvfs_close(int fd)
 	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
 	if (fdtable[fd].vtable->close != NULL) {
 		/* close() is optional - e.g. stdinout_fd_op_vtable */
-		res = fdtable[fd].vtable->close(fdtable[fd].obj);
+		if (fdtable[fd].mode & ZVFS_MODE_IFSOCK) {
+			/* Network socket needs to know socket number so pass
+			 * it via close2() call.
+			 */
+			res = fdtable[fd].vtable->close2(fdtable[fd].obj, fd);
+		} else {
+			res = fdtable[fd].vtable->close(fdtable[fd].obj);
+		}
 	}
 	k_mutex_unlock(&fdtable[fd].lock);
 
@@ -422,46 +430,6 @@ int zvfs_fileno(FILE *file)
 	}
 
 	return (struct fd_entry *)file - fdtable;
-}
-
-int zvfs_dup(int fd, int *newfd)
-{
-	int ret;
-
-	if (_check_fd(fd) < 0) {
-		return -1;
-	}
-
-	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
-
-	if (newfd == NULL) {
-		/* dup() - just find lowest-numbered fd */
-		ret = _find_fd_entry();
-	} else {
-		/* dup2() - check if newfd is valid */
-		if (_check_fd(*newfd) < 0) {
-			ret = -1;
-		} else {
-			if (fdtable[fd].vtable->close) {
-				(void)fdtable[fd].vtable->close(fdtable[fd].obj);
-			}
-			ret = *newfd;
-		}
-	}
-
-	if (ret >= 0) {
-		/* Mark entry as used and initialize fields */
-		if (newfd == NULL) {
-			(void)z_fd_ref(ret);
-		}
-		fdtable[ret] = fdtable[fd];
-		k_mutex_init(&fdtable[ret].lock);
-		k_condvar_init(&fdtable[ret].cond);
-	}
-
-	k_mutex_unlock(&fdtable_lock);
-
-	return ret;
 }
 
 int zvfs_fstat(int fd, struct stat *buf)

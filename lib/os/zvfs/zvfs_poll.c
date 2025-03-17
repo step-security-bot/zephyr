@@ -2,6 +2,7 @@
  * Copyright (c) 2017-2018 Linaro Limited
  * Copyright (c) 2021 Nordic Semiconductor
  * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+ * Copyright (c) 2024 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
